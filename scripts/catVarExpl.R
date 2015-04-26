@@ -1,10 +1,10 @@
 
 #setwd("C:/Users/tmoore/Documents/qtw/public_html/data/")
-BFCases <- read.table(file="http://cs.wellesley.edu/~qtw/data/BirdFluCases.txt", header = TRUE,sep="\t")
+BFCases <- read.csv(file="data/BirdFluCases.txt", header = TRUE,sep="\t")
 names(BFCases)
 str(BFCases)
 
-BFDeaths <- read.table(file="http://cs.wellesley.edu/~qtw/data/BirdFluDeaths.txt", header = TRUE,sep="\t")
+BFDeaths <- read.csv(file="data/BirdFluDeaths.txt", header = TRUE,sep="\t")
 names(BFDeaths)
 str(BFDeaths)
 
@@ -20,12 +20,12 @@ Deaths
 Counts <- cbind(Cases, Deaths)
 Counts
 
-par(mfrow = c(2,2), mar = c(3, 3, 2, 1))
+par(mfrow = c(3,2), mar = c(3,3, 2, 2, 1,1))
 png('../slides/bar1.png')
 barplot(Cases , main = "Bird flu cases")
 dev.off()
 png('../slides/bar2.png')
-barplot(Counts)
+barplot(Counts, main = "Cases Vs Deaths")
 dev.off()
 png('../slides/bar3.png')
 barplot(t(Counts), col = gray(c(0.5,1)))
@@ -33,6 +33,10 @@ dev.off()
 png('../slides/bar4.png')
 barplot(t(Counts), beside = TRUE)
 dev.off()
+
+percentageDeath <- (Counts[,2]/Counts[,1])*100
+Counts <- cbind(Counts,percentageDeath)
+barplot(Counts[,3],main="Percentage of Deaths")
 
 #how about all together
 png('../slides/bar5.png')
@@ -94,7 +98,7 @@ BFCountryProp<-BFCountryProp[names(sort(CCases,decreasing=T)),]
 mosaicplot(BFCountryProp,col=c('green','red'),main="Bird flu survival rates by country")
 
 #onto campaign contributions example
-rs<-read.table('http://cs.wellesley.edu/~qtw/data/regSuperCensusMod.csv',header=T,sep=',')
+rs<-read.table('data/regSuperCensusMod.csv',header=T,sep=',')
 rsi<-rs[rs$IndOrg=="IND",]
 head(rsi)
 
