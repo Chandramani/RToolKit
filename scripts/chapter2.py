@@ -63,19 +63,27 @@ class Chapter2:
         data = Counter(input_col)
         return data
 
+    @staticmethod
+    def derive_mean(input_col):
+        input_col.mean()
+
+    @staticmethod
+    def derive_median(input_col):
+        input_col.median()
+
+    @staticmethod
+    def derive_standard_deviation(input_col):
+        input_col.std()
+
+    @staticmethod
+    def derive_standard_summary(input_col):
+        input_col.describe()
+
 
 if __name__ == '__main__':
 
     obj = Chapter2()
     input_data = pd.read_csv("../data/UsageData.csv")
-    # print input_data.head()
-    # lower_case_column_name = [x.lower() for x in input_data.columns.values]
-    # Chapter2.log_message(lower_case_column_name)
-    # input_data.columns = lower_case_column_name
-    # Chapter2.log_message(message=input_data.columns.values)
-    # print input_data.head()
-    # input_data.to_csv("../data/UsageData.csv", index=False)
-    # Chapter2.log_message(input_data.columns.values)
     columns_to_ignore = input_data.columns.values[0:2]
     for col in input_data.columns.values:
         if col not in columns_to_ignore:
@@ -86,10 +94,9 @@ if __name__ == '__main__':
             print input_data[col].median()
             print input_data[col].std()
             # print Chapter2.get_most_common_value(lst=input_data[col])
-            import sys
-            sys.exit(0)
-    s = pd.Series(["a","b","c","a","a","b","c","a","a","b","c","a"], dtype="category")
-    cat_var_count = Chapter2.categorical_variable_count(s)
-    length = len(s)
-    for key in cat_var_count.keys():
-        print key, cat_var_count[key], (cat_var_count[key]/float(length))*100
+
+    # s = pd.Series(["a","b","c","a","a","b","c","a","a","b","c","a"], dtype="category")
+    # cat_var_count = Chapter2.categorical_variable_count(s)
+    # length = len(s)
+    # for key in cat_var_count.keys():
+    #     print key, cat_var_count[key], (cat_var_count[key]/float(length))*100
