@@ -31,3 +31,4 @@ data['account_id'] = data['account_id'].str.translate(trantab)
 
 data.to_csv("../data/UsageDataMasked.csv",index=False)
 #print list(set(data['account_id']) - set(data['account_id'].str.translate(trantab)))
+
