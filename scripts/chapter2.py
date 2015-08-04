@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import itertools
 from collections import Counter
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 # matplotlib.style.use('ggplot')
@@ -59,6 +60,45 @@ class Chapter2:
         per_non_zero = count_of_non_zero / float(count_of_rows)
 
     @staticmethod
+    def group_data_frame(df=pd.DataFrame(), metrics_to_group=(), metrics_to_group_by=(), operation="sum"):
+        """
+        :rtype : DataFrame
+        :param df:
+        :param metrics_to_group:
+        :param metrics_to_group_by:
+        :param operation:
+        :return:
+        """
+        valid_operations = ["sum", "mean", "median", "max", "min", "prod", "count_nonzero"]
+        if "all_numeric" in metrics_to_group:
+            if operation in valid_operations and operation != "count_nonzero":
+                # col_list = metrics_to_group + metrics_to_group_by
+                grouped_frame = df.groupby(metrics_to_group_by).agg(operation).reset_index()
+                return grouped_frame
+            elif operation == "count_nonzero":
+                # col_list = metrics_to_group + metrics_to_group_by
+                grouped_frame = df.groupby(metrics_to_group_by).agg(np.count_nonzero).reset_index()
+                return grouped_frame
+            else:
+                # FIXME raise Exception
+                print "incorrect input for argument operation, valid option is any one of these = ", valid_operations
+                sys.exit(1)
+        else:
+            if operation in valid_operations and operation != "count_nonzero":
+                col_list = metrics_to_group + metrics_to_group_by
+                grouped_frame = df[col_list].groupby(metrics_to_group_by).agg(operation).reset_index()
+                return grouped_frame
+            elif operation == "count_nonzero":
+                col_list = metrics_to_group + metrics_to_group_by
+                grouped_frame = df[col_list].groupby(metrics_to_group_by).agg(np.count_nonzero).reset_index()
+                return grouped_frame
+            else:
+                # FIXME raise Exception
+                print "incorrect input for argument operation, valid option is any one of these = ", valid_operations
+                sys.exit(1)
+
+
+    @staticmethod
     def get_most_common_value(lst):
         data = Counter(lst)
         return data.most_common(1)
@@ -88,6 +128,21 @@ class Chapter2:
 if __name__ == '__main__':
     obj = Chapter2()
     input_data = pd.read_csv("../data/UsageData.csv")
+    input_data['week'] = pd.to_datetime(input_data['week'])
+    usage_grouped = input_data[['account_id', 'week']].groupby(['account_id'])
+    usage_account_min_max = usage_grouped['week'].agg({'result1':np.max, 'result2':np.min}).reset_index() # transform(lambda x: (x.max() - x.min()))
+    usage_age_account = pd.DataFrame(usage_grouped['week'].apply(lambda x: (x.max() - x.min())).reset_index())
+    print usage_age_account.describe()
+    usage_age_account['week'] = (usage_age_account['week']/np.timedelta64(1, 'D')).astype(int)
+    print usage_age_account.describe()
+    fig = plt.figure()
+    ax1 = fig.add_subplot(2, 1, 1)
+    # ax2 = fig.add_subplot(2, 1, 2)
+    ax1.hist(usage_age_account['week'], bins=20)
+    # ax2.hist(usage_age_account['week'], bins=20, range=(0, 200))
+    plt.show()
+    sys.exit(1)
+    # print input_data.dtypes, input_data['week'].head()
     columns_to_ignore = input_data.columns.values[0:2]
     summary_frame = pd.DataFrame(columns=('sparsity_flag', 'sparse_percentage', 'per_distinct', 'count_of_distinct', 'mean', 'median','standard_deviation'))
     for col in input_data.columns.values:
