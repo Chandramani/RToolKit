@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import itertools
 from collections import Counter
+from pandas.tools.plotting import scatter_matrix
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
@@ -34,7 +35,7 @@ class Chapter2:
         if per_zero < sparsity_threshold:
             return False, np.round(per_zero * 100)
         else:
-            return True, per_zero
+            return True, np.round(per_zero * 100)
 
     def check_col_count_unique(self, input_data_col="", col_name=""):
         """
@@ -148,7 +149,7 @@ class Chapter2:
         """
         usage_grouped = input_data_frame[[account_col, week_col]].groupby([account_col])
         usage_age_account = pd.DataFrame(usage_grouped[week_col].apply(lambda x: (x.max() - x.min())).reset_index())
-        usage_age_account['days'] = (usage_age_account['week'] / np.timedelta64(1, 'D')).astype(int)
+        usage_age_account['days'] = (usage_age_account[week_col] / np.timedelta64(1, 'D')).astype(int)
         return usage_age_account
 
     @staticmethod
@@ -159,7 +160,7 @@ class Chapter2:
         """
         usage_grouped = input_data_frame[[account_col, week_col]].groupby([account_col])
         usage_age_account = pd.DataFrame(usage_grouped[week_col].apply(lambda x: (x.max() - x.min())/30).reset_index())
-        usage_age_account['months'] = (usage_age_account['week'] / np.timedelta64(1, 'D')).astype(int)
+        usage_age_account['months'] = (usage_age_account[week_col] / np.timedelta64(1, 'D')).astype(int)
         return usage_age_account[[account_col, 'months']]
 
     @staticmethod
@@ -193,7 +194,7 @@ class Chapter2:
         :rtype : DataFrame
         :return: Data Frame with column name as index
         """
-        no_of_accounts = input_data_frame['account_id'].nunique()
+        no_of_accounts = input_data_frame[account_col].nunique()
         summary_frame = pd.DataFrame(columns=(
             'sparsity_flag', 'sparse_percentage', 'per_distinct', 'count_of_distinct', 'min', 'first_quartile', 'mean',
             'median', 'third_quartile', 'max', 'standard_deviation', 'variance', 'per_zero_accounts_sum'))
@@ -212,7 +213,7 @@ class Chapter2:
                 max_val = input_data_frame[col].max()
                 std = input_data_frame[col].std()
                 variance = input_data_frame[col].var()
-                per_zero_accounts_sum = self.get_per_of_acct_zero_sum(input_data_frame=input_data_frame[['account_id', col]], input_col=col, account_col='account_id', total_no_of_accounts=no_of_accounts)
+                per_zero_accounts_sum = self.get_per_of_acct_zero_sum(input_data_frame=input_data_frame[[account_col, col]], input_col=col, account_col=account_col, total_no_of_accounts=no_of_accounts)
                 summary_frame.loc[col] = [sparsity_flag, sparse_per, per_distinct, count_of_distinct, min_val,
                                           first_quartile, mean, median, third_quartile, max_val, std, variance,
                                           per_zero_accounts_sum]
@@ -244,15 +245,45 @@ class Chapter2:
         col_sum = col_sum[col_sum[input_col] == 0]
         return (len(col_sum)/float(total_no_of_accounts))*100
 
+    @staticmethod
+    def get_accounts_non_zero_sum(input_data_frame=pd.DataFrame(), account_col=""):
+        col_sum = input_data_frame.groupby(by=account_col).sum()
+        col_sum = col_sum.sum(axis=1)#.reset_index()
+        col_sum.fillna(0, inplace=True)
+        col_sum_none_zero = col_sum[col_sum > 0]
+        col_sum_zero = col_sum[col_sum == 0]
+        return col_sum_none_zero.index, col_sum_zero.index
+
+    @staticmethod
+    def create_and_save_correlation_covariance_matrix(input_data_frame, correlation_file_path ,covariance_file_path):
+        """
+
+        :rtype : Null
+        """
+        correlation_matrix = input_data[3:input_data.shape[1]].corr(method='pearson', min_periods=1)
+        covariance_matrix = input_data[3:input_data.shape[1]].cov(min_periods=1)
+        correlation_matrix.to_csv(correlation_file_path, index=False)
+        covariance_matrix.to_csv(covariance_file_path, index=False)
+
+    @staticmethod
+    def read_and_prepare(path_to_input_file="../data/UsageData.csv"):
+        input_data = pd.read_csv(path_to_input_file)
+        input_data[week_col] = pd.to_datetime(input_data[week_col])
+        account_non_zero, account_zero = Chapter2.get_accounts_non_zero_sum(input_data_frame=input_data.drop(week_col, axis=1), account_col=account_col)
+        input_data = input_data[input_data[account_col].isin(account_non_zero)]
+        input_data.fillna(0, inplace=True)
+        return input_data
+
 # also add feature usage coverage
 if __name__ == '__main__':
+    account_col = 'account_id'
+    week_col = 'week'
     obj = Chapter2(mode="prod")
-    input_data = pd.read_csv("../data/UsageData.csv")
-    input_data['week'] = pd.to_datetime(input_data['week'])
+    input_data = Chapter2.read_and_prepare("../data/UsageData.csv")
     summary_report = obj.create_summary_report(input_data_frame=input_data, columns_to_ignore=input_data.columns[0:2])
     summary_report.to_csv("../data_exploration/summary_report.csv")
-    account_week_count_frame = obj.get_count_of_week_by_account(input_data_frame=input_data, account_col=['account_id'],
-                                                                week_col=['week'])
+    account_week_count_frame = obj.get_count_of_week_by_account(input_data_frame=input_data, account_col=[account_col],
+                                                                week_col=[week_col])
     accounts_shortlisted_weeks = Chapter2.filter_accounts_by_col_value(input_data_frame=account_week_count_frame,
                                                                        col_name="week", col_value=39, operator="gte")
     account_days_count_frame = Chapter2.get_days_for_accounts(input_data_frame=input_data, account_col="account_id",
@@ -266,6 +297,13 @@ if __name__ == '__main__':
     Chapter2.plot_hist(account_week_count_frame)
     Chapter2.plot_hist(account_days_count_frame)
     Chapter2.plot_hist(account_month_count_frame, bins=5)
-    week_count = Chapter2.categorical_variable_count(input_data['week'])
+    week_count = Chapter2.categorical_variable_count(input_data[week_col])
     week_count.plot()
     plt.show()
+    Chapter2.create_and_save_correlation_covariance_matrix(input_data[3:input_data.shape[1]],
+                                                           correlation_file_path="../data_exploration/correlation_matrix.csv",
+                                                           covariance_file_path="../data_exploration/covariance_matrix.csv")
+    input_data.to_csv("../data_exploration/input_data.csv", index=False)
+    sys.exit(0)
+    scatter_matrix(input_data[3:5], alpha=0.2, figsize=(6, 6), diagonal='kde')
+    # plt.show()
