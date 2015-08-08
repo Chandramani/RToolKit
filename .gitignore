@@ -3,4 +3,4 @@
 .RData
 data/
 .idea/
-scripts/preprocess*.py
+scripts/preprocess.py
