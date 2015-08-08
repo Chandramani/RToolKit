@@ -248,7 +248,7 @@ class Chapter2:
     @staticmethod
     def get_accounts_non_zero_sum(input_data_frame=pd.DataFrame(), account_col=""):
         col_sum = input_data_frame.groupby(by=account_col).sum()
-        col_sum = col_sum.sum(axis=1)#.reset_index()
+        col_sum = col_sum.sum(axis=1)
         col_sum.fillna(0, inplace=True)
         col_sum_none_zero = col_sum[col_sum > 0]
         col_sum_zero = col_sum[col_sum == 0]
@@ -260,13 +260,13 @@ class Chapter2:
 
         :rtype : Null
         """
-        correlation_matrix = input_data[3:input_data.shape[1]].corr(method='pearson', min_periods=1)
-        covariance_matrix = input_data[3:input_data.shape[1]].cov(min_periods=1)
+        correlation_matrix = input_data_frame[3:usage_data.shape[1]].corr(method='pearson', min_periods=1)
+        covariance_matrix = input_data_frame[3:usage_data.shape[1]].cov(min_periods=1)
         correlation_matrix.to_csv(correlation_file_path, index=False)
         covariance_matrix.to_csv(covariance_file_path, index=False)
 
     @staticmethod
-    def read_and_prepare(path_to_input_file="../data/UsageData.csv"):
+    def read_and_prepare_usage_data(path_to_input_file="../data/UsageData.csv"):
         input_data = pd.read_csv(path_to_input_file)
         input_data[week_col] = pd.to_datetime(input_data[week_col])
         account_non_zero, account_zero = Chapter2.get_accounts_non_zero_sum(input_data_frame=input_data.drop(week_col, axis=1), account_col=account_col)
@@ -274,36 +274,52 @@ class Chapter2:
         input_data.fillna(0, inplace=True)
         return input_data
 
+    @staticmethod
+    def read_and_prepare_acct_data(path_to_input_file="../data/AccountsDataOriginal.csv"):
+        account_data = pd.read_csv(path_to_input_file)
+        account_data.fillna(0, inplace=True)
+        account_data.loc[account_data.no_of_users <= 0, 'subscription_value'] = 0
+        account_data.loc[account_data.no_of_users < 0, 'no_of_users'] = 0
+        account_data.loc[account_data.no_of_users <= 0, 'status'] = 'churn'
+        account_data.loc[account_data.no_of_users > 0, 'status'] = 'active'
+        return account_data
+
 # also add feature usage coverage
 if __name__ == '__main__':
     account_col = 'account_id'
     week_col = 'week'
     obj = Chapter2(mode="prod")
-    input_data = Chapter2.read_and_prepare("../data/UsageData.csv")
-    summary_report = obj.create_summary_report(input_data_frame=input_data, columns_to_ignore=input_data.columns[0:2])
-    summary_report.to_csv("../data_exploration/summary_report.csv")
-    account_week_count_frame = obj.get_count_of_week_by_account(input_data_frame=input_data, account_col=[account_col],
-                                                                week_col=[week_col])
-    accounts_shortlisted_weeks = Chapter2.filter_accounts_by_col_value(input_data_frame=account_week_count_frame,
-                                                                       col_name="week", col_value=39, operator="gte")
-    account_days_count_frame = Chapter2.get_days_for_accounts(input_data_frame=input_data, account_col="account_id",
-                                                              week_col="week")
-    accounts_shortlisted_days = Chapter2.filter_accounts_by_col_value(input_data_frame=account_days_count_frame,
-                                                                      col_name="days", col_value=39 * 7, operator="gte")
-    account_month_count_frame = Chapter2.get_months_for_account(input_data_frame=input_data, account_col="account_id",
-                                                                week_col="week")
-    accounts_shortlisted_months = Chapter2.filter_accounts_by_col_value(input_data_frame=account_month_count_frame,
-                                                                        col_name="months", col_value=5, operator="gte")
-    Chapter2.plot_hist(account_week_count_frame)
-    Chapter2.plot_hist(account_days_count_frame)
-    Chapter2.plot_hist(account_month_count_frame, bins=5)
-    week_count = Chapter2.categorical_variable_count(input_data[week_col])
-    week_count.plot()
-    plt.show()
-    Chapter2.create_and_save_correlation_covariance_matrix(input_data[3:input_data.shape[1]],
-                                                           correlation_file_path="../data_exploration/correlation_matrix.csv",
-                                                           covariance_file_path="../data_exploration/covariance_matrix.csv")
-    input_data.to_csv("../data_exploration/input_data.csv", index=False)
-    sys.exit(0)
-    scatter_matrix(input_data[3:5], alpha=0.2, figsize=(6, 6), diagonal='kde')
+    usage_data = Chapter2.read_and_prepare_usage_data("../data/UsageData.csv")
+    # summary_report = obj.create_summary_report(input_data_frame=usage_data, columns_to_ignore=usage_data.columns[0:2])
+    # summary_report.to_csv("../data_exploration/summary_report.csv")
+    # account_week_count_frame = obj.get_count_of_week_by_account(input_data_frame=usage_data, account_col=[account_col],
+    #                                                             week_col=[week_col])
+    # accounts_shortlisted_weeks = Chapter2.filter_accounts_by_col_value(input_data_frame=account_week_count_frame,
+    #                                                                    col_name="week", col_value=39, operator="gte")
+    # account_days_count_frame = Chapter2.get_days_for_accounts(input_data_frame=usage_data, account_col="account_id",
+    #                                                           week_col="week")
+    # accounts_shortlisted_days = Chapter2.filter_accounts_by_col_value(input_data_frame=account_days_count_frame,
+    #                                                                   col_name="days", col_value=39 * 7, operator="gte")
+    # account_month_count_frame = Chapter2.get_months_for_account(input_data_frame=usage_data, account_col="account_id",
+    #                                                             week_col="week")
+    # accounts_shortlisted_months = Chapter2.filter_accounts_by_col_value(input_data_frame=account_month_count_frame,
+    #                                                                     col_name="months", col_value=5, operator="gte")
+    # Chapter2.plot_hist(account_week_count_frame)
+    # Chapter2.plot_hist(account_days_count_frame)
+    # Chapter2.plot_hist(account_month_count_frame, bins=5)
+    # week_count = Chapter2.categorical_variable_count(usage_data[week_col])
+    # week_count.plot()
     # plt.show()
+    # Chapter2.create_and_save_correlation_covariance_matrix(usage_data[3:usage_data.shape[1]],
+    #                                                        correlation_file_path="../data_exploration/correlation_matrix.csv",
+    #                                                        covariance_file_path="../data_exploration/covariance_matrix.csv")
+    # usage_data.to_csv("../data_exploration/input_data.csv", index=False)
+    # sys.exit(0)
+    # scatter_matrix(usage_data[3:5], alpha=0.2, figsize=(6, 6), diagonal='kde')
+    # plt.show()
+    # b92jt115
+
+    account_data = Chapter2.read_and_prepare_acct_data(path_to_input_file="../data/AccountsDataOriginal.csv")
+    account_non_zero, account_zero = Chapter2.get_accounts_non_zero_sum(input_data_frame=usage_data.drop(week_col, axis=1), account_col=account_col)
+    print account_data.head()
+    # print len(set.intersection(set(usage_data[account_col]), set(account_data[account_col])))
