@@ -51,18 +51,19 @@ class Chapter2:
         per_distinct = count_of_distinct / float(count_of_rows)
         return np.round(per_distinct * 100), count_of_distinct
 
-    def per_most_common(self, input_data_col="", col_name=""):
-        """
-        :param input_data_col: input data column of data frame
-        :param sparsity_threshold: the threshold of sparsity
-        :return:
-        """
-        self.log_message(message="inside function calculating number of unique values for columns = " + str(col_name))
-        count_of_rows = len(input_data_col)
-        input_data_col = input_data_col.replace(0, np.nan)
-        count_of_non_zero = input_data_col.count()
-        per_non_zero = count_of_non_zero / float(count_of_rows)
-        return per_non_zero
+    # @staticmethod
+    # def per_most_common(input_data_col="", col_name=""):
+    #     """
+    #     :param input_data_col: input data column of data frame
+    #     :param sparsity_threshold: the threshold of sparsity
+    #     :return:
+    #     """
+    #     # self.log_message(message="inside function calculating number of unique values for columns = " + str(col_name))
+    #     count_of_rows = len(input_data_col)
+    #     input_data_col = input_data_col.replace(0, np.nan)
+    #     most_frequent = Chapter2.get_most_common_value(input_data_col)
+    #     per_most_frequent = most_frequent[0][1] / float(count_of_rows)
+    #     return per_most_frequent*100, most_frequent[0][0]
 
     @staticmethod
     def group_data_frame(df=pd.DataFrame(), metrics_to_group=[], metrics_to_group_by=[], operation="sum"):
@@ -104,17 +105,19 @@ class Chapter2:
 
 
     @staticmethod
-    def get_most_common_value(lst):
+    def get_per_most_common_value(lst):
+        lst.fillna(0)
         data = Counter(lst)
-        return data.most_common(1)
+        count_rows = len(lst)
+        return (data.most_common(1)[0][1]/float(count_rows))*100, data.most_common(1)[0][0]
 
     @staticmethod
     def categorical_variable_count(input_col):
         data = Counter(input_col)
-        week_count_frame = pd.DataFrame(columns=['count'])
+        count_frame = pd.DataFrame(columns=['count'])
         for val in data:
-            week_count_frame.loc[val] = data[val]
-        return week_count_frame
+            count_frame.loc[val] = data[val]
+        return count_frame
 
     @staticmethod
     def bivariate_categorical_to_categorical(input_col):
@@ -312,27 +315,22 @@ if __name__ == '__main__':
                                                                 week_col="week")
     accounts_shortlisted_months = Chapter2.filter_accounts_by_col_value(input_data_frame=account_month_count_frame,
                                                                         col_name="months", col_value=5, operator="gte")
-    Chapter2.plot_hist(account_week_count_frame)
-    Chapter2.plot_hist(account_days_count_frame)
-    Chapter2.plot_hist(account_month_count_frame, bins=5)
-    week_count = Chapter2.categorical_variable_count(usage_data[week_col])
-    week_count.plot()
     Chapter2.create_and_save_correlation_covariance_matrix(usage_data[3:usage_data.shape[1]],
                                                            correlation_file_path="../data_exploration/correlation_matrix.csv",
                                                            covariance_file_path="../data_exploration/covariance_matrix.csv")
     account_data = Chapter2.read_and_prepare_acct_data(path_to_input_file="../data/AccountsDataOriginal.csv")
-    # print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(list(set.intersection(set(usage_data[account_col]), set(account_data[account_col]))))])
-    # for col in usage_data.columns.values:
-    #     if col not in usage_data.columns[0:2]:
-    #         print col
-    #         agg_data = usage_data[[account_col, col]].groupby(account_col).sum().reset_index()
-    #         print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(agg_data[account_col][agg_data[col] <= 0])])
+    print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(list(set.intersection(set(usage_data[account_col]), set(account_data[account_col]))))])
+    for col in usage_data.columns.values:
+        if col not in usage_data.columns[0:2]:
+            print col
+            agg_data = usage_data[[account_col, col]].groupby(account_col).sum().reset_index()
+            print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(agg_data[account_col][agg_data[col] <= 0])])
 
     usage_data.drop('total_softs_deleted_user_sessions', axis=1, inplace=True)
     # np.set_printoptions(precision=15)
     # scatter_matrix(usage_data[14:16], alpha=0.2, figsize=(6, 6), diagonal='kde')
     # plt.show()
-    # print Chapter2.categorical_variable_count(input_col=account_data['industry'])
+    print Chapter2.categorical_variable_count(input_col=account_data['industry'])
     cross_tab_industry_status = pd.crosstab(account_data['status'], account_data['industry']).apply(lambda x: (x/float(x.sum()))*100, axis=0)
     usage_data_agg = obj.group_data_frame(df=usage_data,metrics_to_group="all_numeric", metrics_to_group_by=[account_col], operation="sum")
     usage_data_agg_status = pd.merge(left=usage_data_agg, right=account_data, on=account_col)
@@ -343,5 +341,10 @@ if __name__ == '__main__':
     for name, group in color_groups:
         ax.plot(group.logins, group.transactions, marker='o', linestyle='', ms=12, label=name)
     ax.legend()
-    # usage_data_agg_status.plot(kind='scatter', x='logins', y='transactions', c='status', s=50)
+    Chapter2.plot_hist(account_week_count_frame)
+    Chapter2.plot_hist(account_days_count_frame)
+    Chapter2.plot_hist(account_month_count_frame, bins=5)
+    week_count = Chapter2.categorical_variable_count(usage_data[week_col])
+    week_count.plot()
+    usage_data_agg_status.plot(kind='scatter', x='logins', y='transactions', c='status', s=50)
     plt.show()
