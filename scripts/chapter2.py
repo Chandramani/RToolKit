@@ -11,7 +11,6 @@ import matplotlib
 
 
 class Chapter2:
-
     def __init__(self, mode="prod"):
         self.print_message = False
         if mode == "debug":
@@ -50,20 +49,6 @@ class Chapter2:
         count_of_distinct = input_data_col.nunique()
         per_distinct = count_of_distinct / float(count_of_rows)
         return np.round(per_distinct * 100), count_of_distinct
-
-    # @staticmethod
-    # def per_most_common(input_data_col="", col_name=""):
-    #     """
-    #     :param input_data_col: input data column of data frame
-    #     :param sparsity_threshold: the threshold of sparsity
-    #     :return:
-    #     """
-    #     # self.log_message(message="inside function calculating number of unique values for columns = " + str(col_name))
-    #     count_of_rows = len(input_data_col)
-    #     input_data_col = input_data_col.replace(0, np.nan)
-    #     most_frequent = Chapter2.get_most_common_value(input_data_col)
-    #     per_most_frequent = most_frequent[0][1] / float(count_of_rows)
-    #     return per_most_frequent*100, most_frequent[0][0]
 
     @staticmethod
     def group_data_frame(df=pd.DataFrame(), metrics_to_group=[], metrics_to_group_by=[], operation="sum"):
@@ -109,7 +94,7 @@ class Chapter2:
         lst.fillna(0)
         data = Counter(lst)
         count_rows = len(lst)
-        return (data.most_common(1)[0][1]/float(count_rows))*100, data.most_common(1)[0][0]
+        return (data.most_common(1)[0][1] / float(count_rows)) * 100, data.most_common(1)[0][0]
 
     @staticmethod
     def categorical_variable_count(input_col):
@@ -176,7 +161,9 @@ class Chapter2:
                 max_val = input_data_frame[col].max()
                 std = input_data_frame[col].std()
                 variance = input_data_frame[col].var()
-                per_zero_accounts_sum = self.get_per_of_acct_zero_sum(input_data_frame=input_data_frame[[account_col, col]], input_col=col, account_col=account_col, total_no_of_accounts=no_of_accounts)
+                per_zero_accounts_sum = self.get_per_of_acct_zero_sum(
+                    input_data_frame=input_data_frame[[account_col, col]], input_col=col, account_col=account_col,
+                    total_no_of_accounts=no_of_accounts)
                 summary_frame.loc[col] = [sparsity_flag, sparse_per, per_distinct, count_of_distinct, min_val,
                                           first_quartile, mean, median, third_quartile, max_val, std, variance,
                                           per_zero_accounts_sum]
@@ -210,7 +197,8 @@ class Chapter2:
         :rtype : DataFrame
         """
         usage_grouped = input_data_frame[[account_col, week_col]].groupby([account_col])
-        usage_age_account = pd.DataFrame(usage_grouped[week_col].apply(lambda x: (x.max() - x.min())/30).reset_index())
+        usage_age_account = pd.DataFrame(
+            usage_grouped[week_col].apply(lambda x: (x.max() - x.min()) / 30).reset_index())
         usage_age_account['months'] = (usage_age_account[week_col] / np.timedelta64(1, 'D')).astype(int)
         return usage_age_account[[account_col, 'months']]
 
@@ -249,25 +237,30 @@ class Chapter2:
         col_sum_zero = col_sum[col_sum == 0]
         return col_sum_none_zero.index, col_sum_zero.index
 
-    def get_accounts_by_sum(self, input_data_frame=pd.DataFrame(), input_col="", account_col=""):
-        col_sum = self.group_data_frame(df=input_data_frame, metrics_to_group=[input_col], metrics_to_group_by=[account_col], operation="sum")
+    @staticmethod
+    def get_accounts_by_sum(input_data_frame=pd.DataFrame(), input_col="", account_col=""):
+        col_sum = Chapter2.group_data_frame(df=input_data_frame, metrics_to_group=[input_col],
+                                            metrics_to_group_by=[account_col], operation="sum")
         return col_sum
 
-    def get_accounts_by_frequency(self, input_data_frame=pd.DataFrame(), input_col="", account_col=""):
-        col_frequency = self.group_data_frame(df=input_data_frame, metrics_to_group=[input_col], metrics_to_group_by=[account_col], operation="count")
+    @staticmethod
+    def get_accounts_by_frequency(input_data_frame=pd.DataFrame(), input_col="", account_col=""):
+        col_frequency = Chapter2.group_data_frame(df=input_data_frame, metrics_to_group=[input_col],
+                                                  metrics_to_group_by=[account_col], operation="count")
         return col_frequency
 
-    def get_per_of_acct_zero_sum(self, input_data_frame=pd.DataFrame(), input_col="", account_col="", total_no_of_accounts=int):
+    def get_per_of_acct_zero_sum(self, input_data_frame=pd.DataFrame(), input_col="", account_col="",
+                                 total_no_of_accounts=int):
         col_sum = self.get_accounts_by_sum(input_data_frame, input_col, account_col)
         col_sum = col_sum[col_sum[input_col] == 0]
-        return (len(col_sum)/float(total_no_of_accounts))*100
+        return (len(col_sum) / float(total_no_of_accounts)) * 100
 
     @staticmethod
     def plot_hist(input_data_frame, bins=10):
         input_data_frame.hist(bins=bins)
 
     @staticmethod
-    def create_and_save_correlation_covariance_matrix(input_data_frame, correlation_file_path ,covariance_file_path):
+    def create_and_save_correlation_covariance_matrix(input_data_frame, correlation_file_path, covariance_file_path):
         """
         :rtype : Null
         """
@@ -281,7 +274,8 @@ class Chapter2:
         input_data = pd.read_csv(path_to_input_file)
         input_data[week_col] = pd.to_datetime(input_data[week_col])
         input_data.fillna(0, inplace=True)
-        account_non_zero, account_zero = Chapter2.get_accounts_non_zero_sum(input_data_frame=input_data.drop(week_col, axis=1), account_col=account_col)
+        account_non_zero, account_zero = Chapter2.get_accounts_non_zero_sum(
+            input_data_frame=input_data.drop(week_col, axis=1), account_col=account_col)
         input_data = input_data[input_data[account_col].isin(account_non_zero)]
         return input_data
 
@@ -301,6 +295,8 @@ if __name__ == '__main__':
     week_col = 'week'
     obj = Chapter2(mode="prod")
     usage_data = Chapter2.read_and_prepare_usage_data("../data/UsageData.csv")
+    account_data = Chapter2.read_and_prepare_acct_data(path_to_input_file="../data/AccountsDataOriginal.csv")
+
     summary_report = obj.create_summary_report(input_data_frame=usage_data, columns_to_ignore=usage_data.columns[0:2])
     summary_report.to_csv("../data_exploration/summary_report.csv")
     account_week_count_frame = obj.get_count_of_week_by_account(input_data_frame=usage_data, account_col=[account_col],
@@ -318,26 +314,30 @@ if __name__ == '__main__':
     Chapter2.create_and_save_correlation_covariance_matrix(usage_data[3:usage_data.shape[1]],
                                                            correlation_file_path="../data_exploration/correlation_matrix.csv",
                                                            covariance_file_path="../data_exploration/covariance_matrix.csv")
-    account_data = Chapter2.read_and_prepare_acct_data(path_to_input_file="../data/AccountsDataOriginal.csv")
-    print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(list(set.intersection(set(usage_data[account_col]), set(account_data[account_col]))))])
+
+    print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(
+        list(set.intersection(set(usage_data[account_col]), set(account_data[account_col]))))])
     for col in usage_data.columns.values:
         if col not in usage_data.columns[0:2]:
             print col
             agg_data = usage_data[[account_col, col]].groupby(account_col).sum().reset_index()
-            print Chapter2.categorical_variable_count(account_data['status'][account_data[account_col].isin(agg_data[account_col][agg_data[col] <= 0])])
+            print Chapter2.categorical_variable_count(
+                account_data['status'][account_data[account_col].isin(agg_data[account_col][agg_data[col] <= 0])])
 
     usage_data.drop('total_softs_deleted_user_sessions', axis=1, inplace=True)
     # np.set_printoptions(precision=15)
     # scatter_matrix(usage_data[14:16], alpha=0.2, figsize=(6, 6), diagonal='kde')
     # plt.show()
     print Chapter2.categorical_variable_count(input_col=account_data['industry'])
-    cross_tab_industry_status = pd.crosstab(account_data['status'], account_data['industry']).apply(lambda x: (x/float(x.sum()))*100, axis=0)
-    usage_data_agg = obj.group_data_frame(df=usage_data,metrics_to_group="all_numeric", metrics_to_group_by=[account_col], operation="sum")
+    cross_tab_industry_status = pd.crosstab(account_data['status'], account_data['industry']).apply(
+        lambda x: (x / float(x.sum())) * 100, axis=0)
+    usage_data_agg = Chapter2.group_data_frame(df=usage_data, metrics_to_group="all_numeric",
+                                               metrics_to_group_by=[account_col], operation="sum")
     usage_data_agg_status = pd.merge(left=usage_data_agg, right=account_data, on=account_col)
     color_groups = usage_data_agg_status.groupby('status')
     # Plot
     fig, ax = plt.subplots()
-    ax.margins(0.05) # Optional, just adds 5% padding to the autoscaling
+    ax.margins(0.05)  # Optional, just adds 5% padding to the autoscaling
     for name, group in color_groups:
         ax.plot(group.logins, group.transactions, marker='o', linestyle='', ms=12, label=name)
     ax.legend()
