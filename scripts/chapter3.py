@@ -213,6 +213,8 @@ if __name__ == '__main__':
 
     feats = features_final.columns.values
 
+    features_final.to_csv('../data/features_final.csv')
+
     for i in range(0, len(features_final.columns.values)):
         try:
             forActive = pd.Series(features_final.loc[features_final[status_label] == status_active, feats[i]]).values
